@@ -31,21 +31,32 @@ SIGNAL_MAP = {
 @click.option("-d", "--delay", type=int, default=600, show_default=True)
 @click.option("-w", "--web")
 @click.option("-w6", "--web-v6")
+@click.option("-v", "--debug", is_flag=True)
 @click_config_file.configuration_option()
-def command(ddns_server, login, password, delay, web, web_v6=None):
-    logger.info(f"Starting ddnsclient with {locals()}")
+def command(ddns_server, login, password, delay, web, web_v6=None, debug=False):
+    if debug:
+        logger.setLevel(logging.DEBUG)
+    logger.info(f"Starting ddnsclient")
+    logger.debug(f"Config: {locals()}")
     with daemon.DaemonContext(stdin=sys.stdin, stderr=sys.stderr, signal_map=SIGNAL_MAP):
         logger.info("Switched into daemon context")
         while not killswitch.is_set():
             # find out my ipv4
-            myip_v4 = requests.get(web).text
+            try:
+                myip_v4 = requests.get(web).text
+                logger.info(f"Sucessfully recieved a response from web: {myip_v4}")
+            except requests.exceptions.ConnectionError as e:
+                logger.warning(f"Could no access {web}: {e}")
+                terminate(None, None)
 
             # find out my ipv6
             if web_v6:
                 try:
                     myip_v6 = requests.get(web_v6).text
-                except requests.exceptions.ConnectionError:
-                    logger.warning(f"Could no access {web_v6}")
+                    logger.info(f"Sucessfully recieved a response from web: {myip_v6}")
+                except requests.exceptions.ConnectionError as e:
+                    logger.warning(f"Could no access {web_v6}: {e}")
+                    terminate(None, None)
 
             # build the url and the params
             url = f"https://{ddns_server}/nic/update"
