@@ -1,6 +1,7 @@
-FROM python:3.10-alpine
+FROM python:3.10-alpine as developement
+WORKDIR /srv/
 
-COPY Pipfile Pipfile
-COPY Pipfile.lock Pipfile.lock
+COPY ddnsclient ./ddnsclient
+COPY setup.cfg pyproject.toml ./
 
-RUN pip install pipenv && pipenv install --system --deploy
+RUN ls -al && pip install .
