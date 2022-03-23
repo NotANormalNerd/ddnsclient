@@ -8,6 +8,8 @@ import click_config_file
 import daemon
 import requests
 
+import ddnsclient
+
 killswitch = Event()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
 logger = logging.getLogger()
@@ -36,7 +38,7 @@ SIGNAL_MAP = {
 def command(ddns_server, login, password, delay, web, web_v6=None, debug=False):
     if debug:
         logger.setLevel(logging.DEBUG)
-    logger.info(f"Starting ddnsclient")
+    logger.info(f"Starting ddnsclient version {ddnsclient.VERSION}")
     logger.debug(f"Config: {locals()}")
     with daemon.DaemonContext(stdout=sys.stdout, stderr=sys.stderr, signal_map=SIGNAL_MAP):
         logger.info("Switched into daemon context")
