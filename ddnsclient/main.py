@@ -16,7 +16,7 @@ logger = logging.getLogger()
 
 
 def terminate(signal, stack_frame):
-    logger.info("Shutting down")
+    logger.info(f"Shutting down: {signal}")
     killswitch.set()
 
 
@@ -40,6 +40,10 @@ def command(ddns_server, login, password, delay, web, web_v6=None, debug=False):
         logger.setLevel(logging.DEBUG)
     logger.info(f"Starting ddnsclient version {ddnsclient.VERSION}")
     logger.debug(f"Config: {locals()}")
+
+    last_ipv4 = None
+    last_ipv6 = None
+
     with daemon.DaemonContext(stdout=sys.stdout, stderr=sys.stderr, signal_map=SIGNAL_MAP, detach_process=False):
         logger.info("Switched into daemon context")
         while not killswitch.is_set():
@@ -60,17 +64,23 @@ def command(ddns_server, login, password, delay, web, web_v6=None, debug=False):
                     logger.warning(f"Could no access {web_v6}: {e}")
                     terminate(None, None)
 
-            # build the url and the params
-            url = f"https://{ddns_server}/nic/update"
-            ipv4 = f"myip={myip_v4}"
-            ipv6 = f"myipv6={myip_v6}" if web_v6 else None
+            if myip_v4 == last_ipv4 and myip_v6 == last_ipv6:
+                logger.info(f"IPv4 {myip_v4} and IPv6 {myip_v6} did not change. Not updating the DYNDNS Endpoint")
+            else:
+                logger.info(f"IPv4 changed {last_ipv4} -> {myip_v4}")
+                logger.info(f"IPv6 changed {last_ipv6} -> {myip_v6}")
 
-            try:
-                result = requests.get(f"{url}?{ipv4}&{ipv6 or ''}", auth=(login, password))
-                logger.info(f"Request sucessfully sent: {result.request.url}")
-                result.raise_for_status()
-            except requests.exceptions.RequestException as e:
-                logger.error(f"Encountered a problem setting the new IP: {e}")
+                # build the url and the params
+                url = f"https://{ddns_server}/nic/update"
+                ipv4 = f"myip={myip_v4}"
+                ipv6 = f"myipv6={myip_v6}" if web_v6 else None
+
+                try:
+                    result = requests.get(f"{url}?{ipv4}&{ipv6 or ''}", auth=(login, password))
+                    logger.info(f"Request successfully sent: {result.request.url}")
+                    result.raise_for_status()
+                except requests.exceptions.RequestException as e:
+                    logger.error(f"Encountered a problem setting the new IP: {e}")
 
             killswitch.wait(delay)
 
