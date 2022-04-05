@@ -50,7 +50,12 @@ def command(ddns_server, login, password, delay, web, web_v6=None, debug=False):
             # find out my ipv4
             try:
                 myip_v4 = requests.get(web).text
-                logger.info(f"Sucessfully recieved a response from web: {myip_v4}")
+                logger.info(f"Successfully received a response from web: {myip_v4}")
+
+                if myip_v4 != last_ipv4:
+                    logger.info(f"IPv4 changed {last_ipv4} -> {myip_v4}")
+                    last_ipv4 = myip_v4
+
             except requests.exceptions.ConnectionError as e:
                 logger.warning(f"Could no access {web}: {e}")
                 terminate(None, None)
@@ -59,21 +64,25 @@ def command(ddns_server, login, password, delay, web, web_v6=None, debug=False):
             if web_v6:
                 try:
                     myip_v6 = requests.get(web_v6).text
-                    logger.info(f"Sucessfully recieved a response from web: {myip_v6}")
+                    logger.info(f"Successfully received a response from web: {myip_v6}")
+
+                    if myip_v6 != last_ipv6:
+                        logger.info(f"IPv6 changed {last_ipv6} -> {myip_v6}")
+                        last_ipv6 = myip_v6
+
                 except requests.exceptions.ConnectionError as e:
                     logger.warning(f"Could no access {web_v6}: {e}")
                     terminate(None, None)
 
-            if myip_v4 == last_ipv4 and myip_v6 == last_ipv6:
+            if myip_v4 == last_ipv4 or myip_v6 == last_ipv6:
                 logger.info(f"IPv4 {myip_v4} and IPv6 {myip_v6} did not change. Not updating the DYNDNS Endpoint")
             else:
-                logger.info(f"IPv4 changed {last_ipv4} -> {myip_v4}")
-                logger.info(f"IPv6 changed {last_ipv6} -> {myip_v6}")
-
                 # build the url and the params
                 url = f"https://{ddns_server}/nic/update"
                 ipv4 = f"myip={myip_v4}"
+                last_ipv4 = myip_v4
                 ipv6 = f"myipv6={myip_v6}" if web_v6 else None
+                last_ipv6 = myip_v6
 
                 try:
                     result = requests.get(f"{url}?{ipv4}&{ipv6 or ''}", auth=(login, password))
