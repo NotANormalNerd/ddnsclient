@@ -52,7 +52,7 @@ def command(ddns_server, login, password, delay, web, web_v6=None, debug=False):
                 myip_v4 = requests.get(web).text
                 logger.info(f"Successfully received a response from web: {myip_v4}")
 
-                if myip_v4 != last_ipv4:
+                if ipv4_changed := (myip_v4 != last_ipv4):
                     logger.info(f"IPv4 changed {last_ipv4} -> {myip_v4}")
                     last_ipv4 = myip_v4
 
@@ -66,7 +66,7 @@ def command(ddns_server, login, password, delay, web, web_v6=None, debug=False):
                     myip_v6 = requests.get(web_v6).text
                     logger.info(f"Successfully received a response from web: {myip_v6}")
 
-                    if myip_v6 != last_ipv6:
+                    if ipv6_changed := (myip_v6 != last_ipv6):
                         logger.info(f"IPv6 changed {last_ipv6} -> {myip_v6}")
                         last_ipv6 = myip_v6
 
@@ -74,9 +74,7 @@ def command(ddns_server, login, password, delay, web, web_v6=None, debug=False):
                     logger.warning(f"Could no access {web_v6}: {e}")
                     terminate(None, None)
 
-            if myip_v4 == last_ipv4 or myip_v6 == last_ipv6:
-                logger.info(f"IPv4 {myip_v4} and IPv6 {myip_v6} did not change. Not updating the DYNDNS Endpoint")
-            else:
+            if ipv4_changed or ipv6_changed:
                 # build the url and the params
                 url = f"https://{ddns_server}/nic/update"
                 ipv4 = f"myip={myip_v4}"
@@ -90,6 +88,8 @@ def command(ddns_server, login, password, delay, web, web_v6=None, debug=False):
                     result.raise_for_status()
                 except requests.exceptions.RequestException as e:
                     logger.error(f"Encountered a problem setting the new IP: {e}")
+            else:
+                logger.info(f"IPv4 {myip_v4} and IPv6 {myip_v6} did not change. Not updating the DYNDNS Endpoint")
 
             killswitch.wait(delay)
 
