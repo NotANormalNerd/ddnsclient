@@ -39,13 +39,13 @@ class IPRegistry:
     def set_ipv4(self, ipv4):
         ipv4 = IPv4Address(ipv4)
         self.ipv4_changed = self.ipv4 != ipv4
-        logger.info(f"IPv4 has {'not' if self.ipv4_changed else ''} changed: {self.ipv4} -> {ipv4}")
+        logger.info(f"IPv4 has {'' if self.ipv4_changed else 'not'} changed: {self.ipv4} -> {ipv4}")
         self.ipv4 = ipv4
 
     def set_ipv6(self, ipv6):
         ipv6 = IPv6Address(ipv6)
         self.ipv6_changed = self.ipv6 != ipv6
-        logger.info(f"IPv6 has {'not' if self.ipv6_changed else ''} changed: {self.ipv6} -> {ipv6}")
+        logger.info(f"IPv6 has {'' if self.ipv6_changed else 'not'} changed: {self.ipv6} -> {ipv6}")
         self.ipv6 = ipv6
 
 
