@@ -56,7 +56,7 @@ class IPRegistry:
 @click.option("-d", "--delay", type=int, default=600, show_default=True)
 @click.option("-w", "--web")
 @click.option("-w6", "--web-v6")
-@click.option("-n", "--dry-run")
+@click.option("-n", "--dry-run", is_flag=True)
 @click.option("-v", "--debug", is_flag=True)
 @click_config_file.configuration_option()
 def command(ddns_server, login, password, delay, web, web_v6=None, dry_run=False, debug=False):
